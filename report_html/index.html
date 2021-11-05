@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.plot.ly/plotly-1.2.0.min.js"></script> 
+     <script src="https://cdn.jsdelivr.net/npm/danfojs@0.3.3/lib/bundle.min.js"></script>
+    <title>Document</title>
+</head>
+
+<style>
+
+#plot_div {
+    width: 80%;
+    margin: 0 auto;
+}
+
+#plot_div2 {
+    width: 80%;
+    margin: 0 auto;
+}
+
+</style>
+
+<body>
+
+    <div id="plot_div"></div>
+    <div id="plot_div2"></div>
+    <script>
+        const filename = location.search.substring(1);
+
+         dfd.read_csv('/analys/log_'+filename+".csv")
+            .then(df => {
+
+                var layout = {
+                    title: 'log timestamp diff',
+                    xaxis: {
+                        title: 'number',
+                    },
+                    yaxis: {
+                        title: 'diff ms'
+                    },
+                    description:"infura 为基准数据 < 0 表示先收到数据"
+                }
+
+                new_df = df.set_index({ column: "id" })
+                new_df.plot("plot_div").line({ columns: ["infura", "alchemy", "quicknode"], layout: layout })
+
+            }).catch(err => {
+                console.log(err);
+            })
+
+        dfd.read_csv('/analys/pending_'+filename+".csv")
+            .then(df => {
+
+                var layout = {
+                    title: 'pending transaction timestamp diff',
+                    xaxis: {
+                        title: 'number',
+                    },
+                    yaxis: {
+                        title: 'diff ms'
+                    },
+                    description:"infura 为基准数据 < 0 表示先收到数据"
+                }
+
+                new_df = df.set_index({ column: "id" })
+                new_df.plot("plot_div2").line({ columns: ["infura", "alchemy", "quicknode"], layout: layout })
+
+            }).catch(err => {
+                console.log(err);
+            })
+
+    </script>
+</body>
+
+</html>
