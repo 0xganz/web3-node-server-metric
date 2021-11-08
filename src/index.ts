@@ -50,7 +50,7 @@ function start_collect() {
     setTimeout(() => {
         console.log('runend');
         process_arr.forEach(x => x.kill())
-        setTimeout(()=>start_analys(startTime), 1000)
+        setTimeout(() => start_analys(startTime), 1000)
     }, runtime);
 }
 
@@ -167,7 +167,7 @@ function start_data_analys(time: string, file_prefix: 'log' | 'pending', parseLi
             })
 
             if (data_files.every(x => x.compelted)) {
-                setTimeout(()=> callback(), 10000);
+                setTimeout(() => callback(), 10000);
                 console.log('analys compeleted');
                 log_map.forEach((value, key) => {
                     console.log(key, file_prefix, ' 剩余未处理 数据:', value.size)
@@ -190,10 +190,10 @@ function diff_analys(dataMap: Map<string, Map<string, number>>, fs_write: WriteS
         // let finded = true;
         maps.forEach(map => {
             const time = map?.get(key);
-            arr.push(time?time - value:0);
+            arr.push(time ? time - value : 0);
             if (time) {
                 deleteKeys.push(key);
-            } 
+            }
             // else {
             //     finded = false;
             // }
@@ -239,7 +239,7 @@ function parsePendingLine(line: string) {
 function parseLogLine(line: string) {
     const values = line.split(',')
     let succeed = true;
-    const hash = values[1] + "_" + values[2] + "_" + values[3];
+    const hash = values[2];
     let time = 0;
     try {
         time = parseInt(values[0]);
