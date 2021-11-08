@@ -49,5 +49,5 @@ app.listen(port, () => {
 
 function dateFormat(timestamp: number) {
     const date = new Date(timestamp);
-    return date.getUTCFullYear() + "-" + (date.getUTCMonth() + 1) + "-" + date.getUTCDay() + " " + date.getUTCHours() + ":" + date.getUTCMinutes()
+    return date.getUTCFullYear() + "-" + (date.getUTCMonth() + 1) + "-" + date.getDate() + " " + date.getUTCHours() + ":" + date.getUTCMinutes()
 }
