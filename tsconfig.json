@@ -11,7 +11,7 @@
       "sourceMap": true,
       "inlineSources": true,
       "types": ["node"],
-      "stripInternal": true,
+      "stripInternal": false,
       "incremental": true,
       "skipLibCheck": true,
       "importsNotUsedAsValues": "error",
