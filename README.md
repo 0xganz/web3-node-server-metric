@@ -37,8 +37,15 @@ node ./dist/index.js 1 [收集数据时间（分钟）] [收集次数]
 
 ```
 node ./dist/index.js 1  15 4
-```
 
+```
+单独测试 一个服务节点的数据
+
+例如 测试 alchemy
+
+```
+node ./dist/worker.js  wss://eth-mainnet.alchemyapi.io/v2/ZjBad3Dq8qMtn4_fcbWpBnVI3XxOIx2m /Users/xxx/code/typescript/web3-node-server-metric  alchemy  1234 
+```
 #### 查看收集结果
 
 启动 web 服务

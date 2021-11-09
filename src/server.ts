@@ -11,6 +11,8 @@ app.use(express.static('report_html'));
 
 app.use('/analys', express.static(path.join(__dirname, '../analys')));
 
+app.use('/lib', express.static(path.join(__dirname, '../jslib')));
+
 
 app.get('/list', function (req, res) {
     const dir_path = path.join(__dirname, '../analys')

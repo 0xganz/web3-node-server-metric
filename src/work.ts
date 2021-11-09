@@ -1,5 +1,7 @@
-import { web3_worker } from './lib/web3worker'
+import { web3_worker } from './lib/web3Worker'
 import { blox_router_worker } from './lib/bloxRouteWorker';
+import { alchemy_worker } from './lib/alchemyWorker';
+
 
 
 // import account_json from './config/account.json';

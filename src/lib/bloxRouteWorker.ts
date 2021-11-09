@@ -1,4 +1,3 @@
-import Web3 from 'web3';
 import fs from "fs";
 import path from "path";
 
@@ -63,8 +62,8 @@ export function blox_router_worker(provider: string, reportDirPath: string, prov
             pendingDataCount++;
             pendingData += Date.now() + ',' + msg.params.result.txHash + "\n"
             // pending_ws.write(Date.now() + ',' + tx + "\n")
-            if (pendingDataCount >= 100) {
-                pending_ws.write(pendingData)
+            if (pendingDataCount >= 50) {
+                pending_ws.write(pendingData,()=>{})
                 pendingDataCount = 0;
                 pendingData = '';
             }
