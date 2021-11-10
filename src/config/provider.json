@@ -1,6 +1,6 @@
 [
-    ["infura", "wss://mainnet.infura.io/ws/v3/4f159235487c47d5a92d1ad212c0853a"],
     ["alchemy", "wss://eth-mainnet.alchemyapi.io/v2/ZjBad3Dq8qMtn4_fcbWpBnVI3XxOIx2m"],
-    ["bloxRouter", "wss://13.213.141.24/ws"]
+    ["bloxRouter", "wss://13.213.141.24/ws"],
+    ["bloxRouter-gateway", "ws://13.229.143.14:28332/ws"]
 ]
 

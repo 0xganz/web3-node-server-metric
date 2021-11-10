@@ -13,7 +13,7 @@ import path from "path";
 
 const CONTRACT_WETH_USDT = '0x0d4a11d5EEaaC28EC3F61d100daF4d40471f1852';
 
-export function web3_worker(provider: string, reportDirPath: string, providerName: string, startTime: string) {
+export function web3_worker(provider: string, reportDirPath: string, providerName: string, startTime: string, filterMinGasPrice:string) {
 
     const reportLogFilePath = path.join(reportDirPath, 'log_' + providerName + "_" + startTime + ".csv")
 

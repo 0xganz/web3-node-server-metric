@@ -15,7 +15,7 @@ import WebSocket from 'ws';
 // const ws_profossional_url = 'wss://api.blxrbdn.com/ws';
 
 
-export function blox_router_worker(provider: string, reportDirPath: string, providerName: string, startTime: string) {
+export function blox_router_worker(provider: string, reportDirPath: string, providerName: string, startTime: string, filterMinGasPrice: string) {
 
     const reportLogFilePath = path.join(reportDirPath, 'log_' + providerName + "_" + startTime + ".csv")
 
@@ -33,10 +33,20 @@ export function blox_router_worker(provider: string, reportDirPath: string, prov
         checkServerIdentity: () => true
     });
 
+
+    const fixMinPrice = parseInt(filterMinGasPrice) - 0;
+
+    const filterGasOps = 'gas_price > ' + fixMinPrice
+
     ws.on('open', function open() {
         console.log('open')
-        ws.send(`{"jsonrpc": "2.0", "id": 1, "method": "subscribe", "params": ["pendingTxs", {"include": ["tx_hash"]}]}`)
-        ws.send(`{"jsonrpc": "2.0", "id": 2, "method": "subscribe", "params": ["newBlocks", {"include": ["header","hash"]}]}`)
+        // 不支持 pending 的filter 
+        // const pending_sub = `{"jsonrpc": "2.0", "id": 1, "method": "subscribe", "params": ["pendingTxs", {"filters":"${filterGasOps}", "include": ["tx_hash"]}]}`;
+        // const pending_sub = `{"jsonrpc": "2.0", "id": 1, "method": "subscribe", "params": ["pendingTxs", {"include": ["tx_hash","tx_contents"]}]}`;
+        const pending_sub = `{"jsonrpc": "2.0", "id": 1, "method": "subscribe", "params": ["pendingTxs", {"include": ["tx_hash","tx_contents.gas_price","tx_contents.max_priority_fee_per_gas", "tx_contents.max_fee_per_gas"]}]}`;
+        console.log(pending_sub);
+        ws.send(pending_sub);
+        ws.send(`{"jsonrpc": "2.0", "id": 2, "method": "subscribe", "params": ["newBlocks", {"include": ["header","hash"]}]}`);
     });
 
     const subscribeMap = {
@@ -46,6 +56,7 @@ export function blox_router_worker(provider: string, reportDirPath: string, prov
 
     let evetReturn = (data: any) => {
         if (!data.id) return;
+        console.log(data);
         if (data.id == 1) {
             subscribeMap.pendingTxs = data.result;
         }
@@ -57,13 +68,22 @@ export function blox_router_worker(provider: string, reportDirPath: string, prov
 
     }
 
+
     let receiveData = (msg: any) => {
         if (msg.params.subscription === subscribeMap.pendingTxs) {
+            // if (!msg.params.result.txContents.gasPrice) return;
+            // console.log(msg.params.result);
+            const gasPrice = (parseInt(msg.params.result.txContents.gasPrice) - 0);
+            const gasMxPrice = (parseInt(msg.params.result.txContents.maxFeePerGas) - 0);
+            // const gasPrioMxP = (parseInt(msg.params.result.txContents.maxPriorityFeePerGas) - 0);
+
+            // console.log('bloxrouter p', msg.params.result.txHash, gasPrice, gasMxPrice, gasPrioMxP, fixMinPrice)
+            if ((gasPrice&&gasPrice <= fixMinPrice)||gasMxPrice <= fixMinPrice) return;
             pendingDataCount++;
             pendingData += Date.now() + ',' + msg.params.result.txHash + "\n"
             // pending_ws.write(Date.now() + ',' + tx + "\n")
             if (pendingDataCount >= 50) {
-                pending_ws.write(pendingData,()=>{})
+                pending_ws.write(pendingData, () => { })
                 pendingDataCount = 0;
                 pendingData = '';
             }

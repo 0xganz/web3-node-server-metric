@@ -16,26 +16,27 @@ import { alchemy_worker } from './lib/alchemyWorker';
 const workerMap = new Map();
 
 workerMap.set('infura', web3_worker)
-workerMap.set('alchemy', web3_worker)
+workerMap.set('alchemy', alchemy_worker)
 workerMap.set('bloxRouter', blox_router_worker)
+workerMap.set('bloxRouter-gateway', blox_router_worker)
 
 
 // const account_address = account_json.pubkey;
 // const account_prvkey_hex = account_json.prvkey;
 
-function start_woker(provider: string, reportDirPath: string, providerName: string, startTime: string) {
+function start_woker(provider: string, reportDirPath: string, providerName: string, startTime: string, minGasPrice:string) {
     const worker = workerMap.get(providerName);
     if (!worker) {
         console.error('not find worker of ', providerName)
         return;
     }
 
-    worker(provider, reportDirPath, providerName, startTime);
+    worker(provider, reportDirPath, providerName, startTime, minGasPrice);
 
 }
 
 console.log(process.pid, 'args', process.argv)
 
-start_woker(process.argv[2], process.argv[3], process.argv[4], process.argv[5]);
+start_woker(process.argv[2], process.argv[3], process.argv[4], process.argv[5], process.argv[6]);
 
 
