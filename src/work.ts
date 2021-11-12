@@ -1,7 +1,7 @@
 import { web3_worker } from './lib/web3Worker'
 import { blox_router_worker } from './lib/bloxRouteWorker';
 import { alchemy_worker } from './lib/alchemyWorker';
-
+import gasPrecentConfig from './config/gasPriceFilter.json'
 
 
 // import account_json from './config/account.json';
@@ -25,13 +25,26 @@ workerMap.set('bloxRouter-gateway', blox_router_worker)
 // const account_prvkey_hex = account_json.prvkey;
 
 function start_woker(provider: string, reportDirPath: string, providerName: string, startTime: string, minGasPrice:string) {
-    const worker = workerMap.get(providerName);
+    let worker = workerMap.get(providerName);
     if (!worker) {
-        console.error('not find worker of ', providerName)
-        return;
+        console.warn('not match worker for ', providerName)
+        // return;
+        if (providerName.startsWith('infura')||providerName.startsWith('ankr')||providerName.startsWith('web3')) {
+            worker = web3_worker;
+            console.warn('using web3 worker for', providerName)
+        } else if(providerName.startsWith('alchemy')) {
+            worker = alchemy_worker;
+            console.warn('using alchemy worker for', providerName)
+        } else if(providerName.startsWith('bloxRouter')) {
+            worker = blox_router_worker;
+            console.warn('using bloxRouter worker for', providerName)
+        } else {
+            console.error('not find match worker for', providerName);
+            return;
+        }
     }
 
-    worker(provider, reportDirPath, providerName, startTime, minGasPrice);
+    worker(provider, reportDirPath, providerName, startTime, minGasPrice, gasPrecentConfig.filterPrecent);
 
 }
 

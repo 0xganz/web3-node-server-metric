@@ -10,7 +10,7 @@ export function start_data_analys(time: string, file_prefix: 'log' | 'pending', 
 
     const parseLine = file_prefix === 'log' ? parseLogLine : parsePendingLine
 
-    const files = fs.readdirSync(reportPath).map(x => { console.log(x); return x; }).filter(x => x.indexOf(time) >= 0);
+    const files = fs.readdirSync(reportPath).filter(x => x.indexOf(time) >= 0);
     const data_file = path.join(__dirname, '../analys/', file_prefix + '_' + time + '.csv').toString();
 
     if (fs.existsSync(data_file)) {
@@ -18,7 +18,16 @@ export function start_data_analys(time: string, file_prefix: 'log' | 'pending', 
         return;
     }
 
+    const base_data_file = path.join(__dirname, '../analys/', file_prefix + '_' + time + '_base.csv').toString();
+
+    if (fs.existsSync(base_data_file)) {
+        console.warn('已经分析过此时间段文件，如需重新生成，请删除文件', base_data_file);
+        return;
+    }
+
     const fs_analys = fs.createWriteStream(data_file);
+
+    const fs_base_analys = fs.createWriteStream(base_data_file);
 
     const data_files: data_file_info[] = []
 
@@ -42,10 +51,16 @@ export function start_data_analys(time: string, file_prefix: 'log' | 'pending', 
 
     }
 
-    data_files.sort(x => x.provider === 'infura' ? -1 : 1)
+    const base_data_files = [...data_files];
+    base_data_files.sort(x=> x.provider.startsWith('blox')?-1:1);
+
+    data_files.sort(x => x.provider === 'alchemy' ? -1 : 1)
 
     const header = ['id'].concat(data_files.map(x => x.provider)).join(',') + "\n";
     fs_analys.write(header);
+
+    const baseHeader = ['id'].concat(base_data_files.map(x => x.provider)).join(',') + "\n";
+    fs_base_analys.write(baseHeader);
 
     const log_map = new Map<string, Map<string, number>>();
 
@@ -84,13 +99,16 @@ export function start_data_analys(time: string, file_prefix: 'log' | 'pending', 
 
 
     let id_index = 0;
+    let id_index_2 = 0;
 
     const diff_analys_handle = log_map.has('infura')? diff_infura_analys: diff_base_analys;
     const handler = setInterval(() => {
 
         if (data_files.every(x => x.isPause)) {
             console.log('log analys')
-            id_index = diff_analys_handle(log_map, fs_analys, data_files, id_index);
+
+            id_index_2 = diff_base_analys(log_map, fs_base_analys, base_data_files, id_index_2, false);
+            id_index = diff_analys_handle(log_map, fs_analys, data_files, id_index, true);
 
             data_files.forEach(file => {
                 if (!file.compelted) {
@@ -111,7 +129,7 @@ export function start_data_analys(time: string, file_prefix: 'log' | 'pending', 
     }, 200);
 }
 
-function diff_base_analys(dataMap: Map<string, Map<string, number>>, fs_write: WriteStream, pending_files: data_file_info[], id_index: number) {
+function diff_base_analys(dataMap: Map<string, Map<string, number>>, fs_write: WriteStream, pending_files: data_file_info[], id_index: number, clear:boolean) {
     const providers = pending_files.map(x => x.provider);
     const provider_base = providers[0];
     const deleteKeys: string[] = [];
@@ -138,15 +156,17 @@ function diff_base_analys(dataMap: Map<string, Map<string, number>>, fs_write: W
         // }
     })
 
-    deleteKeys.forEach(key => {
-        base_map.delete(key)
-        counter_maps.forEach(map => map?.delete(key))
-    })
+    if(clear) {
+        deleteKeys.forEach(key => {
+            base_map.delete(key)
+            counter_maps.forEach(map => map?.delete(key))
+        })
+    }
     return id_index;
 }
 
 function diff_infura_analys(dataMap: Map<string, Map<string, number>>, fs_write: WriteStream, pending_files: data_file_info[], id_index: number) {
-    return diff_base_analys(dataMap, fs_write,pending_files, id_index);
+    return diff_base_analys(dataMap, fs_write,pending_files, id_index, true);
 }
 
 

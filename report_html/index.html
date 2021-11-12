@@ -11,15 +11,11 @@
 
 <style>
 
-#plot_div {
+#plot_div,#plot_div2,#plot_div3 {
     width: 80%;
     margin: 0 auto;
 }
 
-#plot_div2 {
-    width: 80%;
-    margin: 0 auto;
-}
 
 </style>
 
@@ -27,6 +23,7 @@
 
     <div id="plot_div"></div>
     <div id="plot_div2"></div>
+    <div id="plot_div3"></div>
     <script>
         const filename = location.search.substring(1);
 
@@ -61,12 +58,31 @@
                     },
                     yaxis: {
                         title: 'diff ms'
-                    },
-                    description:"infura 为基准数据 < 0 表示先收到数据"
+                    }
                 }
 
                 new_df = df.set_index({ column: "id" })
                 new_df.plot("plot_div2").line({ columns: df.columns.slice(1), layout: layout })
+
+            }).catch(err => {
+                console.log(err);
+            })
+
+        dfd.read_csv('/analys/pending_'+filename+"_base.csv")
+            .then(df => {
+
+                var layout = {
+                    title: 'pending transaction timestamp diff (base data bloxrouter)',
+                    xaxis: {
+                        title: 'number',
+                    },
+                    yaxis: {
+                        title: 'diff ms'
+                    }
+                }
+
+                new_df = df.set_index({ column: "id" })
+                new_df.plot("plot_div3").line({ columns: df.columns.slice(1), layout: layout })
 
             }).catch(err => {
                 console.log(err);

@@ -1,0 +1,4 @@
+{
+    // 例如 当前块最大费 是 120 则，pendingtransactrion 的过滤条件是 gasFee > 120 * filterPrecent
+    "filterPrecent": 1
+}

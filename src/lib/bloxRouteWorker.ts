@@ -1,7 +1,6 @@
-import fs from "fs";
-import path from "path";
-
 import WebSocket from 'ws';
+import { gererateReportFs } from "./utils";
+import { subProcessMessage } from './workerMessageUtils';
 // import account_json from './config/account.json';
 
 
@@ -15,17 +14,9 @@ import WebSocket from 'ws';
 // const ws_profossional_url = 'wss://api.blxrbdn.com/ws';
 
 
-export function blox_router_worker(provider: string, reportDirPath: string, providerName: string, startTime: string, filterMinGasPrice: string) {
+export function blox_router_worker(provider: string, reportDirPath: string, providerName: string, startTime: string, filterMinGasPrice: string, filterPrecent: number) {
 
-    const reportLogFilePath = path.join(reportDirPath, 'log_' + providerName + "_" + startTime + ".csv")
-
-    const logs_ws = fs.createWriteStream(reportLogFilePath, { encoding: 'utf-8' })
-    logs_ws.write('time' + ',' + 'blockNumber' + ',' + 'txhash' + "\n")
-    const reportPendingFilePath = path.join(reportDirPath, 'pending_' + providerName + "_" + startTime + ".csv")
-
-    const pending_ws = fs.createWriteStream(reportPendingFilePath, { encoding: 'utf-8' })
-
-    pending_ws.write('time' + ',' + 'txhash' + "\n")
+    const { logs_ws, pending_ws } = gererateReportFs(reportDirPath, providerName, startTime);
 
     const ws = new WebSocket(provider, {
         headers: { "Authorization": 'YjJjZGNmMGMtZTJiMS00YzBmLWE4M2YtMDM1NDIyNTFlNTBmOmQ2ZWNlZGNiNGYzN2FmYTkyNTQyN2JmNjcyNjNhY2M1' },
@@ -33,14 +24,20 @@ export function blox_router_worker(provider: string, reportDirPath: string, prov
         checkServerIdentity: () => true
     });
 
+    process.title = providerName;
 
-    const fixMinPrice = parseInt(filterMinGasPrice) - 0;
+    let fixMinPrice = parseInt(filterMinGasPrice) * filterPrecent - 0;
 
-    const filterGasOps = 'gas_price > ' + fixMinPrice
+    subProcessMessage((msg) => {
+        console.log(providerName, 'recieve ipc msg', msg)
+        fixMinPrice = parseInt(msg.value) * filterPrecent - 0;
+    })
+
+    // const filterGasOps = 'gas_price > ' + fixMinPrice
 
     ws.on('open', function open() {
         console.log('open')
-        // 不支持 pending 的filter 
+        // 不支持 pending 的filter 只有 go gateway 支持
         // const pending_sub = `{"jsonrpc": "2.0", "id": 1, "method": "subscribe", "params": ["pendingTxs", {"filters":"${filterGasOps}", "include": ["tx_hash"]}]}`;
         // const pending_sub = `{"jsonrpc": "2.0", "id": 1, "method": "subscribe", "params": ["pendingTxs", {"include": ["tx_hash","tx_contents"]}]}`;
         const pending_sub = `{"jsonrpc": "2.0", "id": 1, "method": "subscribe", "params": ["pendingTxs", {"include": ["tx_hash","tx_contents.gas_price","tx_contents.max_priority_fee_per_gas", "tx_contents.max_fee_per_gas"]}]}`;
@@ -68,6 +65,10 @@ export function blox_router_worker(provider: string, reportDirPath: string, prov
 
     }
 
+    const isgateway = providerName === 'bloxRouter-gateway'
+
+    let pendingData = ''
+    let pendingDataCount = 0;
 
     let receiveData = (msg: any) => {
         if (msg.params.subscription === subscribeMap.pendingTxs) {
@@ -77,8 +78,8 @@ export function blox_router_worker(provider: string, reportDirPath: string, prov
             const gasMxPrice = (parseInt(msg.params.result.txContents.maxFeePerGas) - 0);
             // const gasPrioMxP = (parseInt(msg.params.result.txContents.maxPriorityFeePerGas) - 0);
 
-            // console.log('bloxrouter p', msg.params.result.txHash, gasPrice, gasMxPrice, gasPrioMxP, fixMinPrice)
-            if ((gasPrice&&gasPrice <= fixMinPrice)||gasMxPrice <= fixMinPrice) return;
+            // isgateway ? console.log('bloxrouter-gateway p', msg.params.result.txHash, gasPrice, gasMxPrice, fixMinPrice) : ''
+            if ((gasPrice && gasPrice <= fixMinPrice) || gasMxPrice <= fixMinPrice) return;
             pendingDataCount++;
             pendingData += Date.now() + ',' + msg.params.result.txHash + "\n"
             // pending_ws.write(Date.now() + ',' + tx + "\n")
@@ -88,7 +89,6 @@ export function blox_router_worker(provider: string, reportDirPath: string, prov
                 pendingData = '';
             }
         } else {
-            console.log('new block', msg.params.result.hash)
             console.log(providerName, 'new block', Date.now())
             const content = Date.now() + ',' + (msg.params.result.header.number - 0) + ',' + msg.params.result.hash + "\n";
             logs_ws.write(content);
@@ -106,8 +106,6 @@ export function blox_router_worker(provider: string, reportDirPath: string, prov
     })
 
 
-    let pendingData = ''
-    let pendingDataCount = 0;
 
     process.on('beforeExit', () => {
         if (pendingDataCount > 0) {

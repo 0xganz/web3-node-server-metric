@@ -1,6 +1,6 @@
 import Web3 from 'web3';
-import fs from "fs";
-import path from "path";
+import { BaseWorker, WorkerOptions } from './baseWorker';
+import { gererateReportFs } from './utils';
 
 // import account_json from './config/account.json';
 
@@ -11,19 +11,11 @@ import path from "path";
 // const USDC_ADDRESS = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
 // const USDT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
 
-const CONTRACT_WETH_USDT = '0x0d4a11d5EEaaC28EC3F61d100daF4d40471f1852';
+// const CONTRACT_WETH_USDT = '0x0d4a11d5EEaaC28EC3F61d100daF4d40471f1852';
 
-export function web3_worker(provider: string, reportDirPath: string, providerName: string, startTime: string, filterMinGasPrice:string) {
+export function web3_worker(provider: string, reportDirPath: string, providerName: string, startTime: string, filterMinGasPrice: string, filterPrecent:number) {
 
-    const reportLogFilePath = path.join(reportDirPath, 'log_' + providerName + "_" + startTime + ".csv")
-
-    const logs_ws = fs.createWriteStream(reportLogFilePath, { encoding: 'utf-8' })
-    logs_ws.write('time' + ',' + 'blockNumber' + ',' + 'txhash' + "\n")
-    const reportPendingFilePath = path.join(reportDirPath, 'pending_' + providerName + "_" + startTime + ".csv")
-
-    const pending_ws = fs.createWriteStream(reportPendingFilePath, { encoding: 'utf-8' })
-
-    pending_ws.write('time' + ',' + 'txhash' + "\n")
+    const { logs_ws, pending_ws } = gererateReportFs(reportDirPath, providerName, startTime);
 
     const web3 = new Web3(
         // Replace YOUR-PROJECT-ID with a Project ID from your Infura Dashboard
@@ -37,25 +29,25 @@ export function web3_worker(provider: string, reportDirPath: string, providerNam
         // web3.eth.accounts.wallet.add(acc);
     }
 
-
     let pendingData = ''
     let pendingDataCount = 0;
+
     setTimeout(() => {
 
-        web3.eth.subscribe('pendingTransactions', (err, tx) => {
-            if (err) {
-                console.error(err)
-                return;
-            }
-            pendingDataCount++;
-            pendingData+=Date.now() + ',' + tx + "\n"
-            // pending_ws.write(Date.now() + ',' + tx + "\n")
-            if (pendingDataCount>=50){
-                pending_ws.write(pendingData,()=>{})
-                pendingDataCount = 0;
-                pendingData ='';
-            }
-        });
+        // web3.eth.subscribe('pendingTransactions', (err, tx) => {
+        //     if (err) {
+        //         console.error(err)
+        //         return;
+        //     }
+        //     pendingDataCount++;
+        //     pendingData += Date.now() + ',' + tx + "\n"
+        //     // pending_ws.write(Date.now() + ',' + tx + "\n")
+        //     if (pendingDataCount >= 50) {
+        //         pending_ws.write(pendingData, () => { })
+        //         pendingDataCount = 0;
+        //         pendingData = '';
+        //     }
+        // });
 
         // web3.eth.subscribe('logs', { address: CONTRACT_WETH_USDT }, (err, tx) => {
         //     if (err) {
@@ -72,26 +64,39 @@ export function web3_worker(provider: string, reportDirPath: string, providerNam
                 console.error(err)
                 return;
             }
-            console.log(providerName, 'new block', Date.now())
+            console.log(providerName, 'new block', Date.now(), tx)
             const content = [Date.now(), tx.number, tx.hash].join(',') + "\n";
             logs_ws.write(content);
         });
-    }, 5000)
+    }, 5000);
 
-    process.on('beforeExit', ()=> {
-        if (pendingDataCount >0) {
+    process.on('beforeExit', () => {
+        if (pendingDataCount > 0) {
             pending_ws.write(pendingData)
             pendingDataCount = 0;
-            pendingData ='';
+            pendingData = '';
             pending_ws.close()
         }
     })
-    
+
     process.on('uncaughtException', (e) => {
         console.log('uncaughtException', e)
     })
-    
+
     process.on('unhandledRejection', (e) => {
         console.log('unhandledRejection', e)
     })
+}
+
+
+export class Web3Worker extends BaseWorker {
+
+    constructor(optins: WorkerOptions) {
+        super(optins)
+    }
+
+    work(): void {
+
+    }
+    
 }

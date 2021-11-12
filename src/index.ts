@@ -3,6 +3,8 @@ import { ChildProcess, fork } from 'child_process';
 import provider_config from './config/provider.json'
 import { getGasFeeInfo } from "./lib/blockNativeApi";
 import { start_data_analys } from "./dataAnalys";
+import type { IpcMessage } from "./lib/model";
+import { fetchFilterMinGasPriceAsync } from "./lib/utils";
 
 
 const reportPath = path.join(__dirname, '../report').toString();
@@ -40,9 +42,7 @@ async function start_collect() {
     const runtime = parseInt(time) * 60000;
     const process_arr: ChildProcess[] = [];
 
-    const gasFeeInfo = await getGasFeeInfo();
-
-    const minGasPrice = gasFeeInfo.maxPrice * 10 ** 9 + '';
+    const minGasPrice = await fetchFilterMinGasPriceAsync();
 
     providers.forEach((item) => {
         const [prividerName, privodierUrl] = item
@@ -52,13 +52,33 @@ async function start_collect() {
 
     process.on('beforeExit', () => {
         process_arr.forEach(x => x.kill())
-    })
+    });
+
+    const handler = setInterval(async () => {
+        const minGasPrice = await fetchFilterMinGasPriceAsync();
+
+        const message: IpcMessage = {
+            action: 'update',
+            datatype: 'minGasPrice',
+            value: minGasPrice
+        }
+        process_arr.forEach(sub => {
+            sub.send(message, console.error)
+        })
+    }, 30000)
 
     setTimeout(() => {
+        clearInterval(handler);
         console.log('runend');
         process_arr.forEach(x => x.kill())
         setTimeout(() => start_analys(startTime), 1000)
     }, runtime);
+
+
+
+
+
+
 }
 
 /**

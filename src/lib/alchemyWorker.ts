@@ -1,20 +1,12 @@
 import { createAlchemyWeb3 } from "@alch/alchemy-web3";
-import fs from "fs";
-import path from "path";
+import { gererateReportFs } from "./utils";
+import { subProcessMessage } from "./workerMessageUtils";
 
 const GWEIUnit = 10 ** 9;
 
-export function alchemy_worker(provider: string, reportDirPath: string, providerName: string, startTime: string, filterMinGasPrice: string) {
+export function alchemy_worker(provider: string, reportDirPath: string, providerName: string, startTime: string, filterMinGasPrice: string, filterPrecent: number) {
 
-    const reportLogFilePath = path.join(reportDirPath, 'log_' + providerName + "_" + startTime + ".csv");
-
-    const logs_ws = fs.createWriteStream(reportLogFilePath, { encoding: 'utf-8' });
-    logs_ws.write('time' + ',' + 'blockNumber' + ',' + 'txhash' + "\n");
-    const reportPendingFilePath = path.join(reportDirPath, 'pending_' + providerName + "_" + startTime + ".csv");
-
-    const pending_ws = fs.createWriteStream(reportPendingFilePath, { encoding: 'utf-8' });
-
-    pending_ws.write('time' + ',' + 'txhash' + "\n");
+    const { logs_ws, pending_ws } = gererateReportFs(reportDirPath, providerName, startTime);
 
     const web3 = createAlchemyWeb3(provider);
 
@@ -28,7 +20,13 @@ export function alchemy_worker(provider: string, reportDirPath: string, provider
         const content = [Date.now(), tx.number, tx.hash].join(',') + "\n";
         logs_ws.write(content);
     });
-    const fixMinPrice = parseInt(filterMinGasPrice) - 0;
+    
+    let fixMinPrice = parseInt(filterMinGasPrice) * filterPrecent - 0;
+
+    subProcessMessage((msg) => {
+        console.log(providerName, 'recieve ipc msg', msg)
+        fixMinPrice = parseInt(msg.value) * filterPrecent - 0;
+    })
 
     console.log('fix price', fixMinPrice / GWEIUnit)
 
