@@ -1,4 +1,4 @@
-import { web3_worker } from './lib/web3Worker'
+import { web3_worker } from './lib/web3worker'
 import { blox_router_worker } from './lib/bloxRouteWorker';
 import { alchemy_worker } from './lib/alchemyWorker';
 import gasPrecentConfig from './config/gasPriceFilter.json'
