@@ -8,11 +8,12 @@
  - infura
  - alchemy
  - quicknode
+ - bloxRouter
+ - bloxRouter-gateway
 #### 收集数据说明
- - 各服务商 eth defi合约（weth-usdt） log 的推送时间差
+ - 各服务商 eth newBlockHeader  的推送时间差
  - 各服务商 eth pending - transaction 的推送时间差
 
- 时间差以 infura 为基数
 
 ### 部署
 #### requirement

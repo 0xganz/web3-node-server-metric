@@ -52,7 +52,7 @@ export function start_data_analys(time: string, file_prefix: 'log' | 'pending', 
     }
 
     const base_data_files = [...data_files];
-    base_data_files.sort(x=> x.provider.startsWith('blox')?-1:1);
+    base_data_files.sort(x => x.provider.startsWith('blox') ? -1 : 1);
 
     data_files.sort(x => x.provider === 'alchemy' ? -1 : 1)
 
@@ -101,7 +101,7 @@ export function start_data_analys(time: string, file_prefix: 'log' | 'pending', 
     let id_index = 0;
     let id_index_2 = 0;
 
-    const diff_analys_handle = log_map.has('infura')? diff_infura_analys: diff_base_analys;
+    const diff_analys_handle = log_map.has('infura') ? diff_infura_analys : diff_base_analys;
     const handler = setInterval(() => {
 
         if (data_files.every(x => x.isPause)) {
@@ -129,34 +129,32 @@ export function start_data_analys(time: string, file_prefix: 'log' | 'pending', 
     }, 200);
 }
 
-function diff_base_analys(dataMap: Map<string, Map<string, number>>, fs_write: WriteStream, pending_files: data_file_info[], id_index: number, clear:boolean) {
+function diff_base_analys(dataMap: Map<string, Map<string, number>>, fs_write: WriteStream, pending_files: data_file_info[], id_index: number, clear: boolean) {
     const providers = pending_files.map(x => x.provider);
     const provider_base = providers[0];
     const deleteKeys: string[] = [];
     const base_map = dataMap.get(provider_base) || new Map();
-    const counter_maps = providers.slice(1).map(x=>dataMap.get(x));
+    const counter_maps = providers.slice(1).map(x => dataMap.get(x));
 
     base_map.forEach((value, key) => {
         const arr = [id_index, 0];
-        // let finded = true;
+        let finded = false;
         counter_maps.forEach(map => {
             const time = map?.get(key);
             arr.push(time ? time - value : 0);
             if (time) {
                 deleteKeys.push(key);
+                finded = true;
             }
-            // else {
-            //     finded = false;
-            // }
         })
 
-        // if (finded) {
-        fs_write.write(arr.join(',') + '\n')
-        id_index++;
-        // }
+        if (finded) {
+            fs_write.write(arr.join(',') + '\n')
+            id_index++;
+        }
     })
 
-    if(clear) {
+    if (clear) {
         deleteKeys.forEach(key => {
             base_map.delete(key)
             counter_maps.forEach(map => map?.delete(key))
@@ -166,7 +164,7 @@ function diff_base_analys(dataMap: Map<string, Map<string, number>>, fs_write: W
 }
 
 function diff_infura_analys(dataMap: Map<string, Map<string, number>>, fs_write: WriteStream, pending_files: data_file_info[], id_index: number) {
-    return diff_base_analys(dataMap, fs_write,pending_files, id_index, true);
+    return diff_base_analys(dataMap, fs_write, pending_files, id_index, true);
 }
 
 
