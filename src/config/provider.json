@@ -1,6 +1,6 @@
 [
     ["infura", "wss://mainnet.infura.io/ws/v3/4f159235487c47d5a92d1ad212c0853a"],
-    ["alchemy", "wss://eth-mainnet.alchemyapi.io/v2/ZjBad3Dq8qMtn4_fcbWpBnVI3XxOIx2m", "base"],
+    ["alchemy", "wss://eth-mainnet.alchemyapi.io/v2/7r7vxVgbRgRRkJRciCpJm3_gP3kR8auS", "base"],
     ["quicknote","wss://autumn-broken-water.quiknode.pro/22bb0e32e7eecb5bdbe4d3cd0d6a19047420bf23/"],
     ["bloxRouter-sgp", "wss://13.213.141.24/ws", "base"],
     ["bloxRouter-us", "wss://54.157.119.190/ws", "base"],
